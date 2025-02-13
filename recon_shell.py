@@ -20,16 +20,16 @@ def load_and_prepare_data(file1, file2):
     # Convert 'Transaction Date' and 'Transaction Time' to datetime format for df2
     df2['Transaction Date'] = pd.to_datetime(df2['Delivery Date'], format='%d/%m/%y')
     df2['Transaction Time'] = pd.to_datetime(df2['Time'], format='%H:%M:%S').dt.time
-    df2['TransactionDateTime'] = pd.to_datetime(df2['Transaction Date'].astype(str) + ' ' + df2['Transaction Time'].astype(str))
+    df2['CreationDateTime'] = pd.to_datetime(df2['Transaction Date'].astype(str) + ' ' + df2['Transaction Time'].astype(str))
 
     # Convert 'Transaction Date' and 'Transaction Time' to datetime format for df1
-    df1['Transaction Date'] = pd.to_datetime(df1['TransactionDate'], format='%d/%m/%Y')
-    df1['Transaction Time'] = pd.to_datetime(df1['TransactionTime'], format='%H:%M:%S').dt.time
-    df1['TransactionDateTime'] = pd.to_datetime(df1['Transaction Date'].astype(str) + ' ' + df1['Transaction Time'].astype(str))
+    df1['Transaction Date'] = pd.to_datetime(df1['CreationDate'], format='%d/%m/%Y')
+    df1['Transaction Time'] = pd.to_datetime(df1['CreationTime'], format='%H:%M:%S').dt.time
+    df1['CreationDateTime'] = pd.to_datetime(df1['Transaction Date'].astype(str) + ' ' + df1['Transaction Time'].astype(str))
 
     # Convert numeric columns to float
     df2['Net Amount in Customer currency'] = pd.to_numeric(df2['Net Amount in Customer currency'], errors='coerce')
-    df1['TotalAmount'] = pd.to_numeric(df1['TotalAmount'], errors='coerce')
+    df1['Amount'] = pd.to_numeric(df1['Amount'], errors='coerce')
 
     # Remove spaces in 'Vehicle License Number' and store in 'VehicleNumber1'
     df2['Vehicle License Number'] = df2['Vehicle License Number'].str.replace(r'\s+', '', regex=True)
@@ -42,18 +42,18 @@ def load_and_prepare_data(file1, file2):
     df2['Receipt Number'] = df2['Receipt Number'].astype(str)
 
     # Filter necessary columns for matching
-    df2_filtered = df2[['TransactionDateTime', 'Net Amount in Customer currency', 'VehicleNumber2', 'Site Name', 'Receipt Number']]
-    df1_filtered = df1[['TransactionDateTime', 'TotalAmount', 'VehicleNumber1', 'PetrolStationName']]
+    df2_filtered = df2[['CreationDateTime', 'Net Amount in Customer currency', 'VehicleNumber2', 'Site Name', 'Receipt Number']]
+    df1_filtered = df1[['CreationDateTime', 'Amount', 'VehicleNumber1', 'PetrolStationName']]
 
     # Rename columns for clarity
     df2_filtered.rename(columns={'Net Amount in Customer currency': 'Amount2', 'Vehicle License Number': 'VehicleNumber2'}, inplace=True)
-    df1_filtered.rename(columns={'TotalAmount': 'Amount1', 'VehicleRegistrationNo': 'VehicleNumber1'}, inplace=True)
+    df1_filtered.rename(columns={'Amount': 'Amount1', 'VehicleRegistrationNo': 'VehicleNumber1'}, inplace=True)
 
     return df1, df1_filtered, df2_filtered
 
 def match_transactions(df1_filtered, df2_filtered, time_buffer_hours=1):
     # Create an empty DataFrame to store matched transactions
-    matched_transactions = pd.DataFrame(columns=['TransactionDateTime', 'Amount1', 'VehicleNumber1', 'PetrolStationName', 'Amount2', 'VehicleNumber2', 'Site Name', 'Receipt Number'])
+    matched_transactions = pd.DataFrame(columns=['CreationDateTime', 'Amount1', 'VehicleNumber1', 'PetrolStationName', 'Amount2', 'VehicleNumber2', 'Site Name', 'Receipt Number'])
 
     # Create time buffer
     time_buffer = pd.Timedelta(hours=time_buffer_hours)
@@ -63,8 +63,8 @@ def match_transactions(df1_filtered, df2_filtered, time_buffer_hours=1):
         # Find rows in the second DataFrame that match the vehicle number, site name, and time buffer
         df2_time_match = df2_filtered[
             (df2_filtered['VehicleNumber2'] == row1['VehicleNumber1']) &
-            (df2_filtered['TransactionDateTime'] >= (row1['TransactionDateTime'] - time_buffer)) &
-            (df2_filtered['TransactionDateTime'] <= (row1['TransactionDateTime'] + time_buffer)) &
+            (df2_filtered['CreationDateTime'] >= (row1['CreationDateTime'] - time_buffer)) &
+            (df2_filtered['CreationDateTime'] <= (row1['CreationDateTime'] + time_buffer)) &
             (df2_filtered['Site Name'] == row1['PetrolStationName']) &
             (abs(df2_filtered['Amount2'] - row1['Amount1']) < 0.01)  # Allow for minor differences in amounts
         ]
@@ -72,7 +72,7 @@ def match_transactions(df1_filtered, df2_filtered, time_buffer_hours=1):
         # Append matched transactions to the matched_transactions DataFrame
         for index2, row2 in df2_time_match.iterrows():
             new_match = pd.DataFrame({
-                'TransactionDateTime': [row1['TransactionDateTime']],
+                'CreationDateTime': [row1['CreationDateTime']],
                 'Amount1': [row1['Amount1']],
                 'VehicleNumber1': [row1['VehicleNumber1']],
                 'PetrolStationName': [row1['PetrolStationName']],
@@ -96,8 +96,8 @@ def add_matched_column(df1, matched_transactions):
     # Create a new column in df2 to indicate whether the transaction is matched and add TransactionNo where applicable
     df1['Matched'] = df1.apply(
         lambda row: any(
-            (matched_transactions['TransactionDateTime'] == row['TransactionDateTime']) &
-            (matched_transactions['Amount1'] == row['TotalAmount']) &
+            (matched_transactions['CreationDateTime'] == row['CreationDateTime']) &
+            (matched_transactions['Amount1'] == row['Amount']) &
             (matched_transactions['VehicleNumber1'] == row['VehicleRegistrationNo']) &
             (matched_transactions['PetrolStationName'] == row['PetrolStationName'])
         ), axis=1
@@ -106,8 +106,8 @@ def add_matched_column(df1, matched_transactions):
     # Append TransactionNo from matched_transactions to df2 where matched
     df1['Receipt Number'] = df1.apply(
         lambda row: matched_transactions.loc[
-            (matched_transactions['TransactionDateTime'] == row['TransactionDateTime']) &
-            (matched_transactions['Amount1'] == row['TotalAmount']) &
+            (matched_transactions['CreationDateTime'] == row['CreationDateTime']) &
+            (matched_transactions['Amount1'] == row['Amount']) &
             (matched_transactions['VehicleNumber1'] == row['VehicleRegistrationNo']) &
             (matched_transactions['PetrolStationName'] == row['PetrolStationName']),
             'Receipt Number'
@@ -132,8 +132,8 @@ def find_mismatch_reasons(df1_filtered, df2_filtered, matched_transactions, time
         
         # Check for time mismatch
         df2_time_match = df2_vehicle_match[
-            (df2_vehicle_match['TransactionDateTime'] >= (row1['TransactionDateTime'] - time_buffer)) &
-            (df2_vehicle_match['TransactionDateTime'] <= (row1['TransactionDateTime'] + time_buffer))
+            (df2_vehicle_match['CreationDateTime'] >= (row1['CreationDateTime'] - time_buffer)) &
+            (df2_vehicle_match['CreationDateTime'] <= (row1['CreationDateTime'] + time_buffer))
         ]
         if df2_time_match.empty:
             mismatched_transactions.at[index1, 'MismatchReason'] = 'Time Mismatch'
@@ -192,8 +192,8 @@ def main():
         # Combine matched and mismatched transactions into the original DataFrame
         df1_with_matched['MismatchReason'] = ''
         for index, row in mismatched_transactions.iterrows():
-            df1_with_matched.loc[(df1_with_matched['TransactionDateTime'] == row['TransactionDateTime']) &
-                                 (df1_with_matched['TotalAmount'] == row['Amount1']) &
+            df1_with_matched.loc[(df1_with_matched['CreationDateTime'] == row['CreationDateTime']) &
+                                 (df1_with_matched['Amount'] == row['Amount1']) &
                                  (df1_with_matched['VehicleRegistrationNo'] == row['VehicleNumber1']), 'MismatchReason'] = row['MismatchReason']
         
         # Display the first file with matched column and mismatch reasons
@@ -203,7 +203,7 @@ def main():
         # Remove unnecessary columns for the downloadable file
         # Fix for 'ReferenceReceiptNo' column (treating it as string)
         # df1_with_matched['ReferenceReceiptNo'] = df1_with_matched['ReferenceReceiptNo'].astype(str)
-        df1_downloadable = df1_with_matched.drop(columns=['Transaction Date', 'Transaction Time', 'TransactionDateTime', 'VehicleNumber1'])
+        df1_downloadable = df1_with_matched.drop(columns=['Transaction Date', 'Transaction Time', 'CreationDateTime', 'VehicleNumber1'])
 
         # Download buttons
         st.download_button(
