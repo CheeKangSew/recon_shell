@@ -17,10 +17,18 @@ def load_and_prepare_data(file1, file2):
     df2 = pd.read_csv(file2)
     # df2 = pd.read_excel(file2)
 
+    # Strip leading/trailing spaces in date columns (if any)
+    df2['Delivery Date'] = df2['Delivery Date'].astype(str).str.strip()
+    df2['Time'] = df2['Time'].astype(str).str.strip()
+
     # Convert 'Transaction Date' and 'Transaction Time' to datetime format for df2
-    df2['Transaction Date'] = pd.to_datetime(df2['Delivery Date'], format='%d/%m/%y', errors='coerce')
-    df2['Transaction Time'] = pd.to_datetime(df2['Time'], format='%H:%M:%S').dt.time
-    df2['CreationDateTime'] = pd.to_datetime(df2['Transaction Date'].astype(str) + ' ' + df2['Transaction Time'].astype(str))
+    df2['Transaction Date'] = pd.to_datetime(df2['Delivery Date'], format='%d/%m/%Y', errors='coerce')
+    df2['Transaction Time'] = pd.to_datetime(df2['Time'], format='%H:%M:%S', errors='coerce').dt.time
+
+    # Ensure there are no NaT values before concatenation
+    df2 = df2.dropna(subset=['Transaction Date', 'Transaction Time'])
+
+    df2['CreationDateTime'] = pd.to_datetime(df2['Transaction Date'].astype(str) + ' ' + df2['Transaction Time'].astype(str), errors='coerce')
 
     # Convert 'Transaction Date' and 'Transaction Time' to datetime format for df1
     df1['Transaction Date'] = pd.to_datetime(df1['CreationDate'], format='%d/%m/%Y')
