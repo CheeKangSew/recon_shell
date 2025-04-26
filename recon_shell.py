@@ -17,6 +17,22 @@ def load_and_prepare_data(file1, file2):
     df2 = pd.read_csv(file2)
     # df2 = pd.read_excel(file2)
 
+    # Clean Vehicle License Number
+    df2['Vehicle License Number'] = df2['Vehicle License Number'].astype(str).str.strip().str.replace('#', '', regex=False).replace('', np.nan)
+
+    # Drop rows where Vehicle License Number is missing
+    df2 = df2.dropna(subset=['Vehicle License Number'])
+
+    # Drop dummy sites
+    df2 = df2[~df2['Site Name'].str.contains('DUMMY', case=False, na=False)
+
+    # Convert Net Amount in Customer currency to numeric and remove rows with invalid Net Amount
+    df2['Net Amount in Customer currency'] = pd.to_numeric(df2['Net Amount in Customer currency'], errors='coerce')
+    df2 = df2.dropna(subset=['Net Amount in Customer currency'])
+
+    # Optional: Keep only rows where Net Amount is positive
+    df2 = df2[df2['Net Amount in Customer currency'] >= 0]
+    
     # Strip leading/trailing spaces in date columns (if any)
     df2['Delivery Date'] = df2['Delivery Date'].astype(str).str.strip()
     df2['Time'] = df2['Time'].astype(str).str.strip()
