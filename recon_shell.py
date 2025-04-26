@@ -7,6 +7,7 @@ Created on Mon Sep 23 12:25:43 2024
 
 import streamlit as st
 import pandas as pd
+import numpy as np
 from io import StringIO
 import os
 
