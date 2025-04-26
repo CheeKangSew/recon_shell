@@ -22,8 +22,8 @@ def load_and_prepare_data(file1, file2):
     df2['Time'] = df2['Time'].astype(str).str.strip
 
     # Replace invalid characters with NaN, then drop those rows
-    df2['Card Full Number'] = df2['Card Full Number'].replace(r"^[^a-zA-Z0-9]+$", pd.NA, regex=True)
-    df2 = df2.dropna(subset=['Card Full Number'])
+    # df2['Card Full Number'] = df2['Card Full Number'].replace(r"^[^a-zA-Z0-9]+$", pd.NA, regex=True)
+    # df2 = df2.dropna(subset=['Card Full Number'])
 
     # Drop rows where 'Vehicle License Number' is empty or NaN
     df2 = df2.dropna(subset=['Vehicle License Number'])
