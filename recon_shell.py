@@ -32,7 +32,7 @@ def load_and_prepare_data(file1, file2):
     #df2 = df2.dropna(subset=['Net Amount in Customer currency'])
 
     # Optional: Keep only rows where Net Amount is positive
-    df2 = df2[df2['Net Amount in Customer currency'] >= 0]
+    #df2 = df2[df2['Net Amount in Customer currency'] >= 0]
     
     # Strip leading/trailing spaces in date columns (if any)
     df2['Delivery Date'] = df2['Delivery Date'].astype(str).str.strip()
