@@ -24,7 +24,7 @@ def load_and_prepare_data(file1, file2):
     df2 = df2.dropna(subset=['Vehicle License Number'])
 
     # Drop dummy sites
-    df2 = df2[~df2['Site Name'].str.contains('DUMMY', case=False, na=False)
+    df2 = df2[~df2['Site Name'].str.contains('DUMMY', case=False, na=False)]
 
     # Convert Net Amount in Customer currency to numeric and remove rows with invalid Net Amount
     df2['Net Amount in Customer currency'] = pd.to_numeric(df2['Net Amount in Customer currency'], errors='coerce')
