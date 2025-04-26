@@ -19,10 +19,10 @@ def load_and_prepare_data(file1, file2):
     # df2 = pd.read_excel(file2)
 
     # Clean Vehicle License Number
-    df2['Vehicle License Number'] = df2['Vehicle License Number'].astype(str).str.strip().str.replace('#', '', regex=False).replace('', np.nan)
+    #df2['Vehicle License Number'] = df2['Vehicle License Number'].astype(str).str.strip().str.replace('#', '', regex=False).replace('', np.nan)
 
     # Drop rows where Vehicle License Number is missing
-    df2 = df2.dropna(subset=['Vehicle License Number'])
+    #df2 = df2.dropna(subset=['Vehicle License Number'])
 
     # Drop dummy sites
     df2 = df2[~df2['Site Name'].str.contains('DUMMY', case=False, na=False)]
