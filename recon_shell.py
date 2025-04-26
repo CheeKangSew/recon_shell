@@ -21,6 +21,9 @@ def load_and_prepare_data(file1, file2):
     df2['Delivery Date'] = df2['Delivery Date'].astype(str).str.strip()
     df2['Time'] = df2['Time'].astype(str).str.strip()
 
+    # Remove rows from df2 where 'Vehicle License Number' is empty
+    df2 = df2[df2['Vehicle License Number'].notna() & (df2['Vehicle License Number'].str.strip() != '')]
+
     # Convert 'Transaction Date' and 'Transaction Time' to datetime format for df2
     df2['Transaction Date'] = pd.to_datetime(df2['Delivery Date'], format='%d/%m/%Y', errors='coerce')
     df2['Transaction Time'] = pd.to_datetime(df2['Time'], format='%H:%M:%S', errors='coerce').dt.time
