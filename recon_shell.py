@@ -26,8 +26,8 @@ def load_and_prepare_data(file1, file2):
     # df2 = df2.dropna(subset=['Card Full Number'])
 
     # Drop rows where 'Vehicle License Number' is empty or NaN
-    df2 = df2.dropna(subset=['Vehicle License Number'])
-    df2 = df2[df2['Vehicle License Number'].astype(str).str.strip() != '']
+    # df2 = df2.dropna(subset=['Vehicle License Number'])
+    # df2 = df2[df2['Vehicle License Number'].astype(str).str.strip() != '']
 
     # Convert 'Transaction Date' and 'Transaction Time' to datetime format for df2
     df2['Transaction Date'] = pd.to_datetime(df2['Delivery Date'], format='%d/%m/%Y', errors='coerce')
